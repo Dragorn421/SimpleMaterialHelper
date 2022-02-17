@@ -42,6 +42,14 @@ class MaterialNodes:
 def ensure_setup_and_get_nodes(material: bpy.types.Material):
     node_tree = material.node_tree
 
+    # ensure vertex colors data exists
+
+    for mesh in bpy.data.meshes:
+        mesh: bpy.types.Mesh
+        if material in mesh.materials.values():
+            if mesh.vertex_colors.active is None:
+                mesh.vertex_colors.new(do_init=False)
+
     # output node
 
     output_node_name = "SMH Output Material"
@@ -76,18 +84,80 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
         image_node = node_tree.nodes.new("ShaderNodeTexImage")
         image_node.name = image_node_name
 
+    # vertex color node
+
+    vertex_color_node_name = "SMH Vertex Color"
+    vertex_color_node = node_tree.nodes.get(vertex_color_node_name)
+    if vertex_color_node is None:
+        vertex_color_node = node_tree.nodes.new("ShaderNodeVertexColor")
+        vertex_color_node.name = vertex_color_node_name
+
+    # multiply image color and vertex color node
+
+    multiply_image_color_and_vertex_color_node_name = "SMH Image Color * Vertex Color"
+    multiply_image_color_and_vertex_color_node = node_tree.nodes.get(
+        multiply_image_color_and_vertex_color_node_name
+    )
+    if multiply_image_color_and_vertex_color_node is None:
+        multiply_image_color_and_vertex_color_node = node_tree.nodes.new(
+            "ShaderNodeVectorMath"
+        )
+        multiply_image_color_and_vertex_color_node.name = (
+            multiply_image_color_and_vertex_color_node_name
+        )
+    multiply_image_color_and_vertex_color_node: bpy.types.ShaderNodeVectorMath
+    multiply_image_color_and_vertex_color_node.operation = "MULTIPLY"
+
+    # multiply image alpha and vertex alpha node
+
+    multiply_image_alpha_and_vertex_alpha_node_name = "SMH Image Alpha * Vertex Alpha"
+    multiply_image_alpha_and_vertex_alpha_node = node_tree.nodes.get(
+        multiply_image_alpha_and_vertex_alpha_node_name
+    )
+    if multiply_image_alpha_and_vertex_alpha_node is None:
+        multiply_image_alpha_and_vertex_alpha_node = node_tree.nodes.new(
+            "ShaderNodeMath"
+        )
+        multiply_image_alpha_and_vertex_alpha_node.name = (
+            multiply_image_alpha_and_vertex_alpha_node_name
+        )
+    multiply_image_alpha_and_vertex_alpha_node: bpy.types.ShaderNodeMath
+    multiply_image_alpha_and_vertex_alpha_node.operation = "MULTIPLY"
+
     # links
 
     node_tree.links.new(
-        shader_node.inputs["Base Color"],
+        multiply_image_color_and_vertex_color_node.inputs[0],
         image_node.outputs["Color"],
         verify_limits=True,
     )
     node_tree.links.new(
-        shader_node.inputs["Alpha"],
+        multiply_image_color_and_vertex_color_node.inputs[1],
+        vertex_color_node.outputs["Color"],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        shader_node.inputs["Base Color"],
+        multiply_image_color_and_vertex_color_node.outputs[0],
+        verify_limits=True,
+    )
+
+    node_tree.links.new(
+        multiply_image_alpha_and_vertex_alpha_node.inputs[0],
         image_node.outputs["Alpha"],
         verify_limits=True,
     )
+    node_tree.links.new(
+        multiply_image_alpha_and_vertex_alpha_node.inputs[1],
+        vertex_color_node.outputs["Alpha"],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        shader_node.inputs["Alpha"],
+        multiply_image_alpha_and_vertex_alpha_node.outputs[0],
+        verify_limits=True,
+    )
+
     node_tree.links.new(
         output_node.inputs["Surface"],
         shader_node.outputs["BSDF"],
