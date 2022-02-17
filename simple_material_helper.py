@@ -182,10 +182,31 @@ def on_material_image_update(self, context):
     nodes.image.image = props.image
 
 
+def on_material_use_transparency_update(self, context):
+    mat: bpy.types.Material = context.material
+
+    props: MaterialProperties = mat.simple_material_helper
+
+    if props.use_transparency:
+        mat.blend_method = "BLEND"
+        mat.use_backface_culling = True
+    else:
+        mat.blend_method = "OPAQUE"
+
+
 class MaterialProperties(bpy.types.PropertyGroup):
     image: bpy.props.PointerProperty(
         type=bpy.types.Image,
         update=on_material_image_update,
+    )
+    use_transparency: bpy.props.BoolProperty(
+        name="Use Alpha for Transparency",
+        description=(
+            "Should the alpha from the image or from vertex alpha make the geometry "
+            "transparent. When checked, automatically enables backface culling"
+        ),
+        default=False,
+        update=on_material_use_transparency_update,
     )
 
 
@@ -209,6 +230,9 @@ class MaterialPanel(bpy.types.Panel):
 
         layout.label(text="Image:")
         layout.template_ID(props, "image", open="image.open")
+
+        layout.prop(props, "use_transparency")
+        layout.prop(mat, "use_backface_culling")
 
 
 classes = (
