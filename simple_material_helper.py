@@ -57,6 +57,7 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
     if output_node is None:
         output_node = node_tree.nodes.new("ShaderNodeOutputMaterial")
         output_node.name = output_node_name
+        output_node.location = -200, 0
 
     other_output_nodes = [
         node
@@ -73,6 +74,7 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
     if shader_node is None:
         shader_node = node_tree.nodes.new("ShaderNodeBsdfPrincipled")
         shader_node.name = shader_node_name
+        shader_node.location = -500, 0
 
     shader_node.inputs["Specular"].default_value = 0
 
@@ -83,6 +85,7 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
     if image_node is None:
         image_node = node_tree.nodes.new("ShaderNodeTexImage")
         image_node.name = image_node_name
+        image_node.location = -1300, 0
 
     # vertex color node
 
@@ -91,6 +94,7 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
     if vertex_color_node is None:
         vertex_color_node = node_tree.nodes.new("ShaderNodeVertexColor")
         vertex_color_node.name = vertex_color_node_name
+        vertex_color_node.location = -1300, -500
 
     # multiply image color and vertex color node
 
@@ -105,6 +109,7 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
         multiply_image_color_and_vertex_color_node.name = (
             multiply_image_color_and_vertex_color_node_name
         )
+        multiply_image_color_and_vertex_color_node.location = -800, 0
     multiply_image_color_and_vertex_color_node: bpy.types.ShaderNodeVectorMath
     multiply_image_color_and_vertex_color_node.operation = "MULTIPLY"
 
@@ -121,6 +126,7 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
         multiply_image_alpha_and_vertex_alpha_node.name = (
             multiply_image_alpha_and_vertex_alpha_node_name
         )
+        multiply_image_alpha_and_vertex_alpha_node.location = -800, -300
     multiply_image_alpha_and_vertex_alpha_node: bpy.types.ShaderNodeMath
     multiply_image_alpha_and_vertex_alpha_node.operation = "MULTIPLY"
 
