@@ -194,11 +194,19 @@ def on_material_use_transparency_update(self, context):
     props: MaterialProperties = mat.simple_material_helper
 
     if props.use_transparency:
-        mat.blend_method = "BLEND"
-        mat.use_backface_culling = True
+        if props.use_blend_transparency:
+            mat.blend_method = "BLEND"
+            mat.use_backface_culling = True
+        else:
+            mat.blend_method = "CLIP"
+            mat.alpha_threshold = 0.5
+            mat.use_backface_culling = False
     else:
         mat.blend_method = "OPAQUE"
+        mat.use_backface_culling = False
 
+def on_material_use_blend_transparency_update(self, context):
+    on_material_use_transparency_update(self, context)
 
 class MaterialProperties(bpy.types.PropertyGroup):
     image: bpy.props.PointerProperty(
@@ -209,10 +217,24 @@ class MaterialProperties(bpy.types.PropertyGroup):
         name="Preview Image Alpha & Vertex Alpha",
         description=(
             "Should the alpha from the image or from vertex alpha make the geometry "
-            "transparent. When checked, automatically enables backface culling"
+            "transparent.\n"
+            "Automatically toggles backface culling"
         ),
         default=False,
         update=on_material_use_transparency_update,
+    )
+    use_blend_transparency: bpy.props.BoolProperty(
+        name="Semi-Transparent",
+        description=(
+            "Should the alpha be used to make the geometry partially transparent "
+            "(known as alpha blend).\n"
+            "If unchecked, the geometry will be either fully opaque or fully "
+            "transparent, depending on if the alpha is closer to opaque or transparent "
+            "(known as alpha clip).\n"
+            "Automatically toggles backface culling"
+        ),
+        default=True,
+        update=on_material_use_blend_transparency_update,
     )
 
 
@@ -237,7 +259,12 @@ class MaterialPanel(bpy.types.Panel):
         layout.label(text="Image:")
         layout.template_ID(props, "image", open="image.open")
 
-        layout.prop(props, "use_transparency")
+        if props.use_transparency:
+            box = layout.box()
+            box.prop(props, "use_transparency")
+            box.prop(props, "use_blend_transparency")
+        else:
+            layout.prop(props, "use_transparency")
         layout.prop(mat, "use_backface_culling")
 
 
