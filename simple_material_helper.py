@@ -200,7 +200,7 @@ class MaterialProperties(bpy.types.PropertyGroup):
         update=on_material_image_update,
     )
     use_transparency: bpy.props.BoolProperty(
-        name="Use Alpha for Transparency",
+        name="Preview Image Alpha & Vertex Alpha",
         description=(
             "Should the alpha from the image or from vertex alpha make the geometry "
             "transparent. When checked, automatically enables backface culling"
