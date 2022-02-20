@@ -56,6 +56,14 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
             if mesh.vertex_colors.active is None:
                 mesh.vertex_colors.new(do_init=False)
 
+    for object in bpy.data.objects:
+        object: bpy.types.Object
+        if object.type == "MESH" and material in (
+            material_slot.material for material_slot in object.material_slots.values()
+        ):
+            if object.data.vertex_colors.active is None:
+                object.data.vertex_colors.new(do_init=False)
+
     # output node
 
     output_node_name = "SMH Output Material"
