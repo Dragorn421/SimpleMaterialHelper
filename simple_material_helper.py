@@ -27,6 +27,10 @@ bl_info = {
 
 import bpy
 
+from pathlib import Path
+import json
+import traceback
+
 import typing
 
 if typing.TYPE_CHECKING:
@@ -240,10 +244,11 @@ class MaterialProperties(bpy.types.PropertyGroup):
 
 class MaterialPanel(bpy.types.Panel):
     bl_label = "Simple Material Helper"
-    bl_idname = "MATERIAL_PT_simple_material_helper"
+    # bl_idname is set in register()
     bl_space_type = "PROPERTIES"
     bl_region_type = "WINDOW"
     bl_context = "material"
+    bl_options = {"HIDE_HEADER"}
 
     @classmethod
     def poll(cls, context):
@@ -268,18 +273,99 @@ class MaterialPanel(bpy.types.Panel):
         layout.prop(mat, "use_backface_culling")
 
 
+class Config:
+    # Not saved
+    register_params_path: Path = None
+    should_restart = False
+
+    # Saved
+    use_own_panel = False
+
+    def read(self):
+        try:
+            with self.register_params_path.open() as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            pass
+        except json.JSONDecodeError:
+            pass
+        else:
+            self.use_own_panel = data.get("use_own_panel", self.use_own_panel)
+
+    def write(self):
+        data = {
+            "use_own_panel": self.use_own_panel,
+        }
+        with self.register_params_path.open("w") as f:
+            json.dump(data, f)
+
+
+CONFIG = Config()
+
+
+def on_use_own_panel_update(self, context):
+    CONFIG.should_restart = True
+    CONFIG.use_own_panel = self.use_own_panel
+    CONFIG.write()
+
+
+class AddonProperties(bpy.types.AddonPreferences):
+    bl_idname = __name__
+
+    use_own_panel: bpy.props.BoolProperty(
+        name="Separate Panel",
+        description=(
+            "Should the panel be its own separated and draggable panel.\n"
+            "By default the panel is attached to the top of the material properties.\n"
+            "(requires restarting Blender to apply changes)"
+        ),
+        default=False,
+        update=on_use_own_panel_update,
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        if CONFIG.should_restart:
+            layout.alert = True
+            layout.label(text="Restart Blender to apply changes", icon="ERROR")
+            layout.alert = False
+        layout.prop(self, "use_own_panel")
+
+
 classes = (
+    AddonProperties,
     MaterialProperties,
     MaterialPanel,
 )
 
 
 def register():
+    CONFIG.register_params_path = (
+        Path(bpy.utils.user_resource("SCRIPTS", "addons"))
+        / "simple_material_helper_config.json"
+    )
+    try:
+        CONFIG.read()
+    except:
+        print(
+            "An exception occurred when reading json config from",
+            str(CONFIG.register_params_path),
+        )
+        traceback.print_exception()
+
+    if CONFIG.use_own_panel:
+        MaterialPanel.bl_idname = "MATERIAL_PT_simple_material_helper_own"
+        MaterialPanel.bl_options.discard("HIDE_HEADER")
+    else:
+        MaterialPanel.bl_idname = "MATERIAL_PT_simple_material_helper_top"
+        MaterialPanel.bl_options.add("HIDE_HEADER")
+
     for clazz in classes:
         try:
             bpy.utils.register_class(clazz)
         except:
             print("register_class failed on", clazz)
+            traceback.print_exception()
     bpy.types.Material.simple_material_helper = bpy.props.PointerProperty(
         type=MaterialProperties,
     )
@@ -291,6 +377,7 @@ def unregister():
             bpy.utils.unregister_class(clazz)
         except:
             print("unregister_class failed on", clazz)
+            traceback.print_exception()
 
 
 if __name__ == "__main__":
