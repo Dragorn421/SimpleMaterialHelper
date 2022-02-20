@@ -40,6 +40,7 @@ if typing.TYPE_CHECKING:
 
 
 class MaterialNodes:
+    shader_node: bpy.types.ShaderNodeBsdfPrincipled
     image: bpy.types.ShaderNodeTexImage
     uv_repeat_type_u: bpy.types.ShaderNodeValue
     uv_repeat_type_v: bpy.types.ShaderNodeValue
@@ -449,6 +450,7 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
     # return nodes
 
     nodes = MaterialNodes()
+    nodes.shader_node = shader_node
     nodes.image = image_node
     nodes.uv_repeat_type_u = uv_repeat_type_u
     nodes.uv_repeat_type_v = uv_repeat_type_v
@@ -456,16 +458,47 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
     return nodes
 
 
-def on_material_image_update(self, context):
-    mat: bpy.types.Material = context.material
-
+def set_simple_material(mat: bpy.types.Material):
     props: MaterialProperties = mat.simple_material_helper
 
     nodes = ensure_setup_and_get_nodes(mat)
 
+    set_simple_material_image(mat, nodes, props)
+
+    set_simple_material_uv_repeats(nodes, props)
+
+
+def set_simple_material_image(
+    mat: bpy.types.Material,
+    nodes: MaterialNodes,
+    props,  # type: MaterialProperties
+):
     nodes.image.image = props.image
 
-    set_uv_repeats(nodes, props)
+    if props.image is None:
+        mat.node_tree.links.remove(nodes.shader_node.inputs["Base Color"].links[0])
+        nodes.shader_node.inputs["Base Color"].default_value = 1, 0, 1, 1
+        mat.node_tree.links.remove(nodes.shader_node.inputs["Alpha"].links[0])
+        nodes.shader_node.inputs["Alpha"].default_value = 1
+
+
+def set_simple_material_uv_repeats(
+    nodes: MaterialNodes,
+    props,  # type: MaterialProperties
+):
+    values = {
+        "WRAP": 0,
+        "MIRROR": 1,
+        "CLAMP": 2,
+    }
+    nodes.uv_repeat_type_u.outputs[0].default_value = values[props.uv_repeat_u]
+    nodes.uv_repeat_type_v.outputs[0].default_value = values[props.uv_repeat_v]
+
+
+def on_material_image_update(self, context):
+    mat: bpy.types.Material = context.material
+
+    set_simple_material(mat)
 
 
 def on_material_use_transparency_update(self, context):
@@ -490,27 +523,10 @@ def on_material_use_blend_transparency_update(self, context):
     on_material_use_transparency_update(self, context)
 
 
-def set_uv_repeats(
-    nodes: MaterialNodes,
-    props,  # type: MaterialProperties
-):
-    values = {
-        "WRAP": 0,
-        "MIRROR": 1,
-        "CLAMP": 2,
-    }
-    nodes.uv_repeat_type_u.outputs[0].default_value = values[props.uv_repeat_u]
-    nodes.uv_repeat_type_v.outputs[0].default_value = values[props.uv_repeat_v]
-
-
 def on_material_uv_repeat_update(self, context):
     mat: bpy.types.Material = context.material
 
-    props: MaterialProperties = mat.simple_material_helper
-
-    nodes = ensure_setup_and_get_nodes(mat)
-
-    set_uv_repeats(nodes, props)
+    set_simple_material(mat)
 
 
 class MaterialProperties(bpy.types.PropertyGroup):
