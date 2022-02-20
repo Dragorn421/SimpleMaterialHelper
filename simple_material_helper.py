@@ -41,6 +41,8 @@ if typing.TYPE_CHECKING:
 
 class MaterialNodes:
     image: bpy.types.ShaderNodeTexImage
+    uv_repeat_type_u: bpy.types.ShaderNodeValue
+    uv_repeat_type_v: bpy.types.ShaderNodeValue
 
 
 def ensure_setup_and_get_nodes(material: bpy.types.Material):
@@ -134,7 +136,265 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
     multiply_image_alpha_and_vertex_alpha_node: bpy.types.ShaderNodeMath
     multiply_image_alpha_and_vertex_alpha_node.operation = "MULTIPLY"
 
-    # links
+    # uv map node
+
+    uv_map_node_name = "SMH UV Map"
+    uv_map_node = node_tree.nodes.get(uv_map_node_name)
+    if uv_map_node is None:
+        uv_map_node = node_tree.nodes.new("ShaderNodeUVMap")
+        uv_map_node.name = uv_map_node_name
+        uv_map_node.location = -2900, -400
+
+    # separate uv components node
+
+    uv_separate_node_name = "SMH Separate UV"
+    uv_separate_node = node_tree.nodes.get(uv_separate_node_name)
+    if uv_separate_node is None:
+        uv_separate_node = node_tree.nodes.new("ShaderNodeSeparateXYZ")
+        uv_separate_node.name = uv_separate_node_name
+        uv_separate_node.location = -2700, -400
+
+    # uv mirror u node
+
+    uv_mirror_u_node_name = "SMH UV Mirror U"
+    uv_mirror_u_node = node_tree.nodes.get(uv_mirror_u_node_name)
+    if uv_mirror_u_node is None:
+        uv_mirror_u_node = node_tree.nodes.new("ShaderNodeMath")
+        uv_mirror_u_node.name = uv_mirror_u_node_name
+        uv_mirror_u_node.location = -2400, 0
+    uv_mirror_u_node: bpy.types.ShaderNodeMath
+    uv_mirror_u_node.operation = "PINGPONG"
+    uv_mirror_u_node.inputs[1].default_value = 1
+
+    # uv mirror v node
+
+    uv_mirror_v_node_name = "SMH UV Mirror V"
+    uv_mirror_v_node = node_tree.nodes.get(uv_mirror_v_node_name)
+    if uv_mirror_v_node is None:
+        uv_mirror_v_node = node_tree.nodes.new("ShaderNodeMath")
+        uv_mirror_v_node.name = uv_mirror_v_node_name
+        uv_mirror_v_node.location = -2400, -200
+    uv_mirror_v_node: bpy.types.ShaderNodeMath
+    uv_mirror_v_node.operation = "PINGPONG"
+    uv_mirror_v_node.inputs[1].default_value = 1
+
+    # uv clamp u node
+
+    uv_clamp_u_node_name = "SMH UV Clamp U"
+    uv_clamp_u_node = node_tree.nodes.get(uv_clamp_u_node_name)
+    if uv_clamp_u_node is None:
+        uv_clamp_u_node = node_tree.nodes.new("ShaderNodeClamp")
+        uv_clamp_u_node.name = uv_clamp_u_node_name
+        uv_clamp_u_node.location = -2400, -500
+    uv_clamp_u_node: bpy.types.ShaderNodeClamp
+    uv_clamp_u_node.clamp_type = "MINMAX"
+    uv_clamp_u_node.inputs["Min"].default_value = 0
+    uv_clamp_u_node.inputs["Max"].default_value = 1
+
+    # uv clamp v node
+
+    uv_clamp_v_node_name = "SMH UV Clamp V"
+    uv_clamp_v_node = node_tree.nodes.get(uv_clamp_v_node_name)
+    if uv_clamp_v_node is None:
+        uv_clamp_v_node = node_tree.nodes.new("ShaderNodeClamp")
+        uv_clamp_v_node.name = uv_clamp_v_node_name
+        uv_clamp_v_node.location = -2400, -700
+    uv_clamp_v_node: bpy.types.ShaderNodeClamp
+    uv_clamp_v_node.clamp_type = "MINMAX"
+    uv_clamp_v_node.inputs["Min"].default_value = 0
+    uv_clamp_v_node.inputs["Max"].default_value = 1
+
+    # uv repeat type u node
+
+    uv_repeat_type_u_name = "SMH UV Repeat Type U"
+    uv_repeat_type_u = node_tree.nodes.get(uv_repeat_type_u_name)
+    if uv_repeat_type_u is None:
+        uv_repeat_type_u = node_tree.nodes.new("ShaderNodeValue")
+        uv_repeat_type_u.name = uv_repeat_type_u_name
+        uv_repeat_type_u.location = -2200, 0
+
+    # uv repeat pick u 1 node (picks wrap/mirror)
+
+    uv_repeat_pick1_u_name = "SMH UV Pick U 1"
+    uv_repeat_pick1_u = node_tree.nodes.get(uv_repeat_pick1_u_name)
+    if uv_repeat_pick1_u is None:
+        uv_repeat_pick1_u = node_tree.nodes.new("ShaderNodeMapRange")
+        uv_repeat_pick1_u.name = uv_repeat_pick1_u_name
+        uv_repeat_pick1_u.location = -2000, -200
+    uv_repeat_pick1_u.inputs["From Min"].default_value = 0
+    uv_repeat_pick1_u.inputs["From Max"].default_value = 1
+
+    # uv repeat pick u 2 node (picks pick1/clamp)
+
+    uv_repeat_pick2_u_name = "SMH UV Pick U 2"
+    uv_repeat_pick2_u = node_tree.nodes.get(uv_repeat_pick2_u_name)
+    if uv_repeat_pick2_u is None:
+        uv_repeat_pick2_u = node_tree.nodes.new("ShaderNodeMapRange")
+        uv_repeat_pick2_u.name = uv_repeat_pick2_u_name
+        uv_repeat_pick2_u.location = -1700, -200
+    uv_repeat_pick2_u.inputs["From Min"].default_value = 1
+    uv_repeat_pick2_u.inputs["From Max"].default_value = 2
+
+    # uv repeat type v node
+
+    uv_repeat_type_v_name = "SMH UV Repeat Type V"
+    uv_repeat_type_v = node_tree.nodes.get(uv_repeat_type_v_name)
+    if uv_repeat_type_v is None:
+        uv_repeat_type_v = node_tree.nodes.new("ShaderNodeValue")
+        uv_repeat_type_v.name = uv_repeat_type_v_name
+        uv_repeat_type_v.location = -2200, -600
+
+    # uv repeat pick v 1 node (picks wrap/mirror)
+
+    uv_repeat_pick1_v_name = "SMH UV Pick V 1"
+    uv_repeat_pick1_v = node_tree.nodes.get(uv_repeat_pick1_v_name)
+    if uv_repeat_pick1_v is None:
+        uv_repeat_pick1_v = node_tree.nodes.new("ShaderNodeMapRange")
+        uv_repeat_pick1_v.name = uv_repeat_pick1_v_name
+        uv_repeat_pick1_v.location = -2000, -800
+    uv_repeat_pick1_v.inputs["From Min"].default_value = 0
+    uv_repeat_pick1_v.inputs["From Max"].default_value = 1
+
+    # uv repeat pick v 2 node (picks pick1/clamp)
+
+    uv_repeat_pick2_v_name = "SMH UV Pick V 2"
+    uv_repeat_pick2_v = node_tree.nodes.get(uv_repeat_pick2_v_name)
+    if uv_repeat_pick2_v is None:
+        uv_repeat_pick2_v = node_tree.nodes.new("ShaderNodeMapRange")
+        uv_repeat_pick2_v.name = uv_repeat_pick2_v_name
+        uv_repeat_pick2_v.location = -1700, -800
+    uv_repeat_pick2_v.inputs["From Min"].default_value = 1
+    uv_repeat_pick2_v.inputs["From Max"].default_value = 2
+
+    # combine uv components node
+
+    uv_combine_node_name = "SMH Combine UV"
+    uv_combine_node = node_tree.nodes.get(uv_combine_node_name)
+    if uv_combine_node is None:
+        uv_combine_node = node_tree.nodes.new("ShaderNodeCombineXYZ")
+        uv_combine_node.name = uv_combine_node_name
+        uv_combine_node.location = -1500, -400
+
+    # Node links
+
+    # UV wrap, mirror, clamp
+
+    node_tree.links.new(
+        uv_separate_node.inputs[0],
+        uv_map_node.outputs["UV"],
+        verify_limits=True,
+    )
+
+    node_tree.links.new(
+        uv_mirror_u_node.inputs[0],
+        uv_separate_node.outputs[0],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        uv_mirror_v_node.inputs[0],
+        uv_separate_node.outputs[1],
+        verify_limits=True,
+    )
+
+    node_tree.links.new(
+        uv_clamp_u_node.inputs[0],
+        uv_separate_node.outputs[0],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        uv_clamp_v_node.inputs[0],
+        uv_separate_node.outputs[1],
+        verify_limits=True,
+    )
+
+    # Pick U
+
+    node_tree.links.new(
+        uv_repeat_pick1_u.inputs["Value"],
+        uv_repeat_type_u.outputs[0],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        uv_repeat_pick1_u.inputs["To Min"],
+        uv_separate_node.outputs[0],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        uv_repeat_pick1_u.inputs["To Max"],
+        uv_mirror_u_node.outputs[0],
+        verify_limits=True,
+    )
+
+    node_tree.links.new(
+        uv_repeat_pick2_u.inputs["Value"],
+        uv_repeat_type_u.outputs[0],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        uv_repeat_pick2_u.inputs["To Min"],
+        uv_repeat_pick1_u.outputs[0],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        uv_repeat_pick2_u.inputs["To Max"],
+        uv_clamp_u_node.outputs[0],
+        verify_limits=True,
+    )
+
+    # Pick V
+
+    node_tree.links.new(
+        uv_repeat_pick1_v.inputs["Value"],
+        uv_repeat_type_v.outputs[0],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        uv_repeat_pick1_v.inputs["To Min"],
+        uv_separate_node.outputs[1],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        uv_repeat_pick1_v.inputs["To Max"],
+        uv_mirror_v_node.outputs[0],
+        verify_limits=True,
+    )
+
+    node_tree.links.new(
+        uv_repeat_pick2_v.inputs["Value"],
+        uv_repeat_type_v.outputs[0],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        uv_repeat_pick2_v.inputs["To Min"],
+        uv_repeat_pick1_v.outputs[0],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        uv_repeat_pick2_v.inputs["To Max"],
+        uv_clamp_v_node.outputs[0],
+        verify_limits=True,
+    )
+
+    # UV output
+
+    node_tree.links.new(
+        uv_combine_node.inputs[0],
+        uv_repeat_pick2_u.outputs[0],
+        verify_limits=True,
+    )
+    node_tree.links.new(
+        uv_combine_node.inputs[1],
+        uv_repeat_pick2_v.outputs[0],
+        verify_limits=True,
+    )
+
+    node_tree.links.new(
+        image_node.inputs[0],
+        uv_combine_node.outputs[0],
+        verify_limits=True,
+    )
+
+    # Color
 
     node_tree.links.new(
         multiply_image_color_and_vertex_color_node.inputs[0],
@@ -152,6 +412,8 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
         verify_limits=True,
     )
 
+    # Alpha
+
     node_tree.links.new(
         multiply_image_alpha_and_vertex_alpha_node.inputs[0],
         image_node.outputs["Alpha"],
@@ -168,6 +430,8 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
         verify_limits=True,
     )
 
+    # Output
+
     node_tree.links.new(
         output_node.inputs["Surface"],
         shader_node.outputs["BSDF"],
@@ -178,6 +442,8 @@ def ensure_setup_and_get_nodes(material: bpy.types.Material):
 
     nodes = MaterialNodes()
     nodes.image = image_node
+    nodes.uv_repeat_type_u = uv_repeat_type_u
+    nodes.uv_repeat_type_v = uv_repeat_type_v
 
     return nodes
 
@@ -190,6 +456,8 @@ def on_material_image_update(self, context):
     nodes = ensure_setup_and_get_nodes(mat)
 
     nodes.image.image = props.image
+
+    set_uv_repeats(nodes, props)
 
 
 def on_material_use_transparency_update(self, context):
@@ -209,8 +477,33 @@ def on_material_use_transparency_update(self, context):
         mat.blend_method = "OPAQUE"
         mat.use_backface_culling = False
 
+
 def on_material_use_blend_transparency_update(self, context):
     on_material_use_transparency_update(self, context)
+
+
+def set_uv_repeats(
+    nodes: MaterialNodes,
+    props,  # type: MaterialProperties
+):
+    values = {
+        "WRAP": 0,
+        "MIRROR": 1,
+        "CLAMP": 2,
+    }
+    nodes.uv_repeat_type_u.outputs[0].default_value = values[props.uv_repeat_u]
+    nodes.uv_repeat_type_v.outputs[0].default_value = values[props.uv_repeat_v]
+
+
+def on_material_uv_repeat_update(self, context):
+    mat: bpy.types.Material = context.material
+
+    props: MaterialProperties = mat.simple_material_helper
+
+    nodes = ensure_setup_and_get_nodes(mat)
+
+    set_uv_repeats(nodes, props)
+
 
 class MaterialProperties(bpy.types.PropertyGroup):
     image: bpy.props.PointerProperty(
@@ -239,6 +532,67 @@ class MaterialProperties(bpy.types.PropertyGroup):
         ),
         default=True,
         update=on_material_use_blend_transparency_update,
+    )
+
+    uv_repeat_u: bpy.props.EnumProperty(
+        items=[
+            (
+                "WRAP",
+                "Wrap",
+                "Makes the image normally repeat along U",
+                "TEXTURE",
+                0,
+            ),
+            (
+                "MIRROR",
+                "Mirror",
+                "Makes the image repeat along U, mirroring every other repetition",
+                "MOD_MIRROR",
+                1,
+            ),
+            (
+                "CLAMP",
+                "Clamp",
+                "Makes the image not repeat along U, "
+                "stretching the first and last columns of the image",
+                "FULLSCREEN_EXIT",
+                2,
+            ),
+        ],
+        name="UV Repeat U",
+        description="How to repeat the image along the U component of UVs",
+        default="WRAP",
+        update=on_material_uv_repeat_update,
+    )
+    uv_repeat_v: bpy.props.EnumProperty(
+        items=[
+            (
+                "WRAP",
+                "Wrap",
+                "Makes the image normally repeat along V",
+                "TEXTURE",
+                0,
+            ),
+            (
+                "MIRROR",
+                "Mirror",
+                "Makes the image repeat along V, mirroring every other repetition",
+                "MOD_MIRROR",
+                1,
+            ),
+            (
+                "CLAMP",
+                "Clamp",
+                "Makes the image not repeat along V, "
+                "stretching the first and last columns of the image",
+                "FULLSCREEN_EXIT",
+                2,
+            ),
+        ],
+        name="UV Repeat V",
+        description="How to repeat the image along the V component of UVs",
+        default="WRAP",
+        update=on_material_uv_repeat_update,
     )
 
 
@@ -270,7 +624,14 @@ class MaterialPanel(bpy.types.Panel):
             box.prop(props, "use_blend_transparency")
         else:
             layout.prop(props, "use_transparency")
+
         layout.prop(mat, "use_backface_culling")
+
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
+        layout.prop(props, "uv_repeat_u")
+        layout.prop(props, "uv_repeat_v")
 
 
 class Config:
