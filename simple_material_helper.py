@@ -592,7 +592,7 @@ class MaterialProperties(bpy.types.PropertyGroup):
                 "CLAMP",
                 "Clamp",
                 "Makes the image not repeat along V, "
-                "stretching the first and last columns of the image",
+                "stretching the first and last lines of the image",
                 "FULLSCREEN_EXIT",
                 2,
             ),
