@@ -726,7 +726,7 @@ classes = (
 
 def register():
     CONFIG.register_params_path = (
-        Path(bpy.utils.user_resource("SCRIPTS", "addons"))
+        Path(bpy.utils.user_resource("SCRIPTS", path="addons"))
         / "simple_material_helper_config.json"
     )
     try:
