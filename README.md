@@ -18,9 +18,9 @@ For how to install addons, see the Blender manual: https://docs.blender.org/manu
 
 These demos also make use of export_obj_so which you can find at: https://github.com/z64tools/export_obj_so
 
-[Full demo of using the addons with SharpOcarina for OoT64 modding](media/video_demo1_full.webm) (6 minutes)
+[Full demo of using the addons with SharpOcarina for OoT64 modding (YouTube)](https://www.youtube.com/watch?v=qvEIb564tAM) (6 minutes) - [(download)](media/video_demo1_full.webm)
 
-[Another demo, with a simpler room, modeling more slowly](media/video_demo2_simple.webm) (9 minutes)
+[Another demo, with a simpler room, modeling more slowly (YouTube)](https://www.youtube.com/watch?v=KUMaNqcViJU) (9 minutes) - [(download)](media/video_demo2_simple.webm)
 
 (excuse me for the quality of the textures, I hastily drew them myself :p)
 
